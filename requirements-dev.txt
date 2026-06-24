@@ -1,0 +1,9 @@
+# Development and local dependencies. These are not deployed to Lambda.
+# Install with: python -m pip install -r requirements-dev.txt
+-r requirements.txt
+uvicorn
+boto3
+streamlit
+requests
+pytest
+httpx

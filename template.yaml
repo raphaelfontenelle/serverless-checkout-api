@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Checkout service. A FastAPI application running on AWS Lambda behind an
+  HTTP API, storing checkout records in DynamoDB. The architecture is
+  serverless and scales automatically with no servers to manage.
+
+# Parameters let the secret be supplied at deploy time instead of being
+# written into the template.
+Parameters:
+  JwtSecret:
+    Type: String
+    NoEcho: true
+    Description: Secret used to sign and verify JWT tokens.
+
+# Settings shared by all functions in this template.
+Globals:
+  Function:
+    Timeout: 15
+    MemorySize: 256
+    Runtime: python3.12
+
+Resources:
+  # The DynamoDB table that stores one record per checkout. A single
+  # partition key on the generated id is enough for this service.
+  CheckoutTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: String
+
+  # The Lambda function that runs the FastAPI application. Mangum is the
+  # entry point, defined as app.main.handler.
+  CheckoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.main.handler
+      CodeUri: .
+      Environment:
+        Variables:
+          STORAGE_BACKEND: dynamodb
+          CHECKOUT_TABLE_NAME: !Ref CheckoutTable
+          JWT_SECRET: !Ref JwtSecret
+      # Grant the function permission to read and write the table without
+      # writing an IAM policy by hand.
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CheckoutTable
+      # Wire the function to an HTTP API. The proxy path sends every
+      # route to FastAPI, which then does its own routing.
+      Events:
+        ApiRoot:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+        ApiProxy:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+# Outputs print useful values after a successful deploy.
+Outputs:
+  ApiBaseUrl:
+    Description: Base URL of the deployed checkout service.
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  CheckoutTableName:
+    Description: Name of the DynamoDB table storing checkouts.
+    Value: !Ref CheckoutTable
