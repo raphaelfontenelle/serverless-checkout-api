@@ -91,10 +91,20 @@ else:
                 }
             )
 
-    # Show the current list of items the user has added.
+    # Show the current list of items the user has added. The unit price is
+    # formatted to two decimals here so the table displays currency cleanly,
+    # while the underlying value sent to the API keeps full precision.
     if st.session_state.cart_items:
         st.subheader("Items")
-        st.table(st.session_state.cart_items)
+        display_rows = [
+            {
+                "name": item["name"],
+                "unit_price": f"{item['unit_price']:.2f}",
+                "quantity": item["quantity"],
+            }
+            for item in st.session_state.cart_items
+        ]
+        st.table(display_rows)
 
         if st.button("Calculate checkout"):
             try:
