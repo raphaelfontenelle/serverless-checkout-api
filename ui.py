@@ -75,13 +75,19 @@ else:
     st.subheader("Add an item")
     with st.form("item_form", clear_on_submit=True):
         name = st.text_input("Name")
-        unit_price = st.number_input("Unit price", min_value=0.0, step=1.0)
+        # value=None starts the field empty so the user can type directly
+        # without first clearing a default zero.
+        unit_price = st.number_input(
+            "Unit price", min_value=0.0, step=1.0, value=None
+        )
         quantity = st.number_input("Quantity", min_value=1, step=1, value=1)
         add_clicked = st.form_submit_button("Add item")
 
     if add_clicked:
         if not name.strip():
             st.warning("Item name cannot be empty.")
+        elif unit_price is None:
+            st.warning("Unit price is required.")
         else:
             st.session_state.cart_items.append(
                 {
