@@ -13,7 +13,7 @@ WORKDIR /app
 # Install dependencies first so this layer is cached when only the
 # application code changes.
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt uvicorn boto3
 
 # Copy the application code.
 COPY app ./app
